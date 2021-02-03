@@ -60,10 +60,19 @@ vec4 paint(in vec2 p)
 	float xangle = XFOV * (p.x - 0.5);
 	float yangle = YFOV * (p.y - 0.5);
 	
-	vec3 rd = dir +
-		vec3(-dir.z, dir.y, dir.x) * tan(xangle) +
-		vec3(0., 1., 0.) * tan(yangle);
+	vec3 rd = vec3(dir.x, 0., dir.z);
+	rd += vec3(-dir.z, 0., dir.x) * tan(xangle);
 	rd = normalize(rd);
+	rd = vec3( rd.x * cos(dir.y+yangle), sin(dir.y+yangle), rd.z * cos(dir.y+yangle) );
+	
+	/*
+	 * vec3 rd = normalize(
+	 *     vec3(dir.x,  0., dir.z) +
+	 *     vec3(-dir.z, 0., dir.x) * tan(xangle)
+	 * );
+	 * float cs = cos(dir.y+yangle);
+	 * rd = vec3(rd.x*cs, sin(dir.y+yangle), rd.z*cs);
+	 */
 
 	vec3 so = vec3(5., 0., 0.);
 	float sr = 1.;

@@ -34,8 +34,8 @@ unsigned int FRAMERATE_LIMIT = 60u;
 Shader shader;
 RenderTexture rtexture;
 
-constexpr float const XANGLE_SPEED = 1.f * M_PI;
-constexpr float const YANGLE_SPEED = -1.f * M_PI;
+constexpr float const XANGLE_SPEED =  M_PI / 1000.f;
+constexpr float const YANGLE_SPEED = -M_PI / 1000.f;
 constexpr float const CAM_SPEED    = 2.5f;
 
 
@@ -109,6 +109,7 @@ int main( int argc, char *argv[] )
 {
 	Vec3 cam(5.f, 0.f, 5.f);
 	Vec3 dir(0.f, 0.f, -1.f);
+	float ydir = 0.f;;
 	bool camchanged = true;
 	bool dirchanged = true;
 
@@ -128,13 +129,11 @@ int main( int argc, char *argv[] )
 	double time;
 	Mouse::setPosition({(int)vmode.width/2, (int)vmode.height/2});
 	Vector2i mp = Mouse::getPosition();
-	cout << mp.x << ", " << mp.y << endl;
 	Vector2i md;
 	while(window.isOpen())
 	{
 		while(window.pollEvent(event))
 		{
-
 			switch(event.type)
 			{
 			case Event::KeyPressed:
@@ -165,8 +164,8 @@ int main( int argc, char *argv[] )
 
 		// dirangle[0] = 0.f;
 		// dirangle[1] = 0.f;
-		dirangle[0] = (float)md.y / vmode.height * YANGLE_SPEED;
-		dirangle[1] = (float)md.x / vmode.width  * XANGLE_SPEED;
+		dirangle[0] = (float)md.y * YANGLE_SPEED;
+		dirangle[1] = (float)md.x * XANGLE_SPEED;
 		camstep[0]  = 0.f;
 		camstep[1]  = 0.f;
 		camstep[2]  = 0.f;
@@ -184,19 +183,10 @@ int main( int argc, char *argv[] )
 		if(Keyboard::isKeyPressed(Keyboard::LShift))
 			camstep[2] -= time * CAM_SPEED;
 
-		/*
-		 * if(Keyboard::isKeyPressed(Keyboard::Up))
-		 *     dirangle[0] += time * YANGLE_SPEED;
-		 * if(Keyboard::isKeyPressed(Keyboard::Down))
-		 *     dirangle[0] -= time * YANGLE_SPEED;
-		 * if(Keyboard::isKeyPressed(Keyboard::Left))
-		 *     dirangle[1] -= time * XANGLE_SPEED;
-		 * if(Keyboard::isKeyPressed(Keyboard::Right))
-		 *     dirangle[1] += time * XANGLE_SPEED;
-		 */
-
 		if(fabs(dirangle[0]) > 0.000001)
-			dir = normalize(dir + Vec3(0.f, 1.f, 0.f) * dirangle[0]),
+			// dir.y = normalize(dir + Vec3(0.f, 1.f, 0.f) * dirangle[0]),
+			ydir += dirangle[0],
+			ydir = min((float)M_PI/2.f, max(-(float)M_PI/2.f, ydir)),
 			dirchanged = true;
 		if(fabs(dirangle[1]) > 0.000001)
 			dir = normalize(turn(dir, dirangle[1], Plane::xz)),
@@ -222,9 +212,11 @@ int main( int argc, char *argv[] )
 			camchanged = false,
 			cout << "cam: " << cam << endl;
 		if(dirchanged)
+			dir.y = ydir,
 			shader.setUniform("dir", dir),
 			dirchanged = false,
-			cout << "dir: " << dir << endl;
+			cout << "dir: " << dir << endl,
+			dir.y = 0.f;
 
 
 
