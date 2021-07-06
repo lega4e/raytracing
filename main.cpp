@@ -4,10 +4,10 @@
 
 #include <SFML/Graphics.hpp>
 
-#include <lis/Stopwatch.hpp>
+#include <nvx/Stopwatch.hpp>
 
 
-using namespace lis;
+using namespace nvx;
 using namespace sf;
 using namespace sf::Glsl;
 using namespace std;
@@ -107,8 +107,8 @@ void init_shader()
 // main
 int main( int argc, char *argv[] )
 {
-	Vec3 cam(5.f, 0.f, 5.f);
-	Vec3 dir(0.f, 0.f, -1.f);
+	Vec3 cam(0.f, 0.f, 0.f);
+	Vec3 dir(0.f, 0.f, 1.f);
 	float ydir = 0.f;;
 	bool camchanged = true;
 	bool dirchanged = true;
@@ -211,6 +211,7 @@ int main( int argc, char *argv[] )
 			shader.setUniform("cam", cam),
 			camchanged = false,
 			cout << "cam: " << cam << endl;
+
 		if(dirchanged)
 			dir.y = ydir,
 			shader.setUniform("dir", dir),
