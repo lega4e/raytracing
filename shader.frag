@@ -1,36 +1,37 @@
 uniform vec2 resolution; // Разрешение экрана в пикселяx
 uniform vec3 dir;        // Направление камеры. Всегда нормированный
 uniform vec3 cam;        // Положение камеры в пространестве
+uniform mat3 trm;        // Матрица трансформации (поворота)
 
 
 
 
 
 // global objects
-vec4 WHITE        = vec4(1.0, 1.0, 1.0, 1.0);
-vec4 BLACK        = vec4(0.0, 0.0, 0.0, 1.0);
+vec4 WHITE        = vec4(1.000, 1.000, 1.000, 1.000);
+vec4 BLACK        = vec4(0.000, 0.000, 0.000, 1.000);
 
-vec4 RED          = vec4(0.678, 0.224, 0.224, 1.0);
-vec4 LIGHT_RED    = vec4(0.867, 0.325, 0.325, 1.0);
-vec4 LLIGHT_RED   = vec4(0.957, 0.412, 0.412, 1.0);
-vec4 DARK_RED     = vec4(0.608, 0.106, 0.106, 1.0);
-vec4 DDARK_RED    = vec4(0.510, 0.051, 0.051, 1.0);
+vec4 RED          = vec4(0.678, 0.224, 0.224, 1.000);
+vec4 LIGHT_RED    = vec4(0.867, 0.325, 0.325, 1.000);
+vec4 LLIGHT_RED   = vec4(0.957, 0.412, 0.412, 1.000);
+vec4 DARK_RED     = vec4(0.608, 0.106, 0.106, 1.000);
+vec4 DDARK_RED    = vec4(0.510, 0.051, 0.051, 1.000);
 
-vec4 GREEN        = vec4(0.259, 0.678, 0.224, 1.0);
-vec4 LIGHT_GREEN  = vec4(0.541, 0.867, 0.325, 1.0);
-vec4 LLIGHT_GREEN = vec4(0.412, 0.957, 0.486, 1.0);
-vec4 DARK_GREEN   = vec4(0.200, 0.608, 0.106, 1.0);
-vec4 DDARK_GREEN  = vec4(0.051, 0.510, 0.094, 1.0);
+vec4 GREEN        = vec4(0.259, 0.678, 0.224, 1.000);
+vec4 LIGHT_GREEN  = vec4(0.541, 0.867, 0.325, 1.000);
+vec4 LLIGHT_GREEN = vec4(0.412, 0.957, 0.486, 1.000);
+vec4 DARK_GREEN   = vec4(0.200, 0.608, 0.106, 1.000);
+vec4 DDARK_GREEN  = vec4(0.051, 0.510, 0.094, 1.000);
 
-vec4 BLUE         = vec4(0.216, 0.302, 0.702, 1.0);
-vec4 LIGHT_BLUE   = vec4(0.325, 0.400, 0.867, 1.0);
-vec4 LLIGHT_BLUE  = vec4(0.412, 0.498, 0.957, 1.0);
-vec4 DARK_BLUE    = vec4(0.133, 0.106, 0.608, 1.0);
-vec4 DDARK_BLUE   = vec4(0.067, 0.051, 0.510, 1.0);
+vec4 BLUE         = vec4(0.216, 0.302, 0.702, 1.000);
+vec4 LIGHT_BLUE   = vec4(0.325, 0.400, 0.867, 1.000);
+vec4 LLIGHT_BLUE  = vec4(0.412, 0.498, 0.957, 1.000);
+vec4 DARK_BLUE    = vec4(0.133, 0.106, 0.608, 1.000);
+vec4 DDARK_BLUE   = vec4(0.067, 0.051, 0.510, 1.000);
 
-vec4 YELLOW       = vec4(0.745, 0.725, 0.235, 1.0);
-vec4 MAGENTA      = vec4(0.224, 0.780, 0.655, 1.0);
-vec4 PURPLE       = vec4(0.647, 0.224, 0.780, 1.0);
+vec4 YELLOW       = vec4(0.745, 0.725, 0.235, 1.000);
+vec4 MAGENTA      = vec4(0.224, 0.780, 0.655, 1.000);
+vec4 PURPLE       = vec4(0.647, 0.224, 0.780, 1.000);
 
 float ALPHA = 0.0001;
 float PI    = 3.14159265358979323846;
@@ -116,15 +117,15 @@ float direct_light_intensity(
  */
 vec4 paint(in vec2 p)
 {
-	vec3 rd = normalize(vec3( p.x - 0.5, p.y - 0.5, 1. ));
+	vec3 rd = normalize(vec3( p.x - 0.5, p.y - 0.5, 1. ) * trm);
 
 	// sphere-floor
-	vec3 fso = vec3(0., -1000., 0.);
+	vec3 fso  = vec3(0., -1000., 0.);
 	float fsr = 999.;
 
 	// sphere-object
 	vec3  so = vec3(0., 0., 5.);
-	float sr = 1.;
+	float sr = 0.5;
 
 	// light
 	vec3  plso   = vec3(3., 4., 0.); // point light source center
@@ -132,8 +133,8 @@ vec4 paint(in vec2 p)
 	float amblsi = 0.3;              // ambient light source intensity
 
 	// intersects
-	vec2 t = sphere_inters( cam, rd, so, sr );
-	vec2 ft = sphere_inters( cam, rd, fso, fsr );
+	vec2 t     = sphere_inters( cam, rd, so, sr );
+	vec2 ft    = sphere_inters( cam, rd, fso, fsr );
 	vec4 color = MAGENTA;
 
 	if(ft.x >= 1. && (t.x <= 1. || ft.x <= t.x))
@@ -146,7 +147,7 @@ vec4 paint(in vec2 p)
 		return BLACK;
 	else
 	{
-		vec3 p = cam + min(t.x, t.y) * rd;
+		vec3 p   = cam + min(t.x, t.y) * rd;
 		vec4 res = color * (
 			amblsi +
 			point_light_intensity(plso, p, (p - so) / sr) * plsi

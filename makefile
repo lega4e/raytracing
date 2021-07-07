@@ -8,7 +8,7 @@ LIBS = -lsfml-graphics -lsfml-system -lsfml-window
 
 
 # main
-all: $(EXECUTABLE)
+build: $(EXECUTABLE)
 
 run: $(EXECUTABLE)
 	$(EXECUTABLE) 

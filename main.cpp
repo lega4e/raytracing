@@ -37,6 +37,7 @@ RenderTexture rtexture;
 constexpr float const XANGLE_SPEED =  M_PI / 1000.f;
 constexpr float const YANGLE_SPEED = -M_PI / 1000.f;
 constexpr float const CAM_SPEED    = 2.5f;
+constexpr float const ALPHA        = 0.00001;
 
 
 
@@ -96,7 +97,7 @@ void init_shader()
 		(float)vmode.width, (float)vmode.height
 	});
 
-	shader.setUniform("cam", Glsl::Vec3{ 0.f, 0.f, 0.f });
+	shader.setUniform("cam", Glsl::Vec3{ 0.f, 0.f,  0.f });
 	shader.setUniform("dir", Glsl::Vec3{ 1.f, 0.2f, 0.f });
 }
 
@@ -107,9 +108,19 @@ void init_shader()
 // main
 int main( int argc, char *argv[] )
 {
+	float *trmp = new float[9];
+	for (float *b = trmp, *e = trmp+9; b != e; ++b)
+		*b = 0.f;
+
 	Vec3 cam(0.f, 0.f, 0.f);
 	Vec3 dir(0.f, 0.f, 1.f);
-	float ydir = 0.f;;
+
+	/*
+	 * Матрица трансформации
+	 */
+	priv::Matrix<3, 3> trm(trmp);
+
+	float ydir = 0.f, cx = 0.f;
 	bool camchanged = true;
 	bool dirchanged = true;
 
@@ -162,10 +173,8 @@ int main( int argc, char *argv[] )
 		md = Mouse::getPosition() - mp;
 		Mouse::setPosition(mp);
 
-		// dirangle[0] = 0.f;
-		// dirangle[1] = 0.f;
 		dirangle[0] = (float)md.y * YANGLE_SPEED;
-		dirangle[1] = (float)md.x * XANGLE_SPEED;
+		dirangle[1] = - (float)md.x * XANGLE_SPEED;
 		camstep[0]  = 0.f;
 		camstep[1]  = 0.f;
 		camstep[2]  = 0.f;
@@ -175,30 +184,30 @@ int main( int argc, char *argv[] )
 		if(Keyboard::isKeyPressed(Keyboard::S))
 			camstep[0] -= time * CAM_SPEED;
 		if(Keyboard::isKeyPressed(Keyboard::A))
-			camstep[1] -= time * CAM_SPEED;
-		if(Keyboard::isKeyPressed(Keyboard::D))
 			camstep[1] += time * CAM_SPEED;
+		if(Keyboard::isKeyPressed(Keyboard::D))
+			camstep[1] -= time * CAM_SPEED;
 		if(Keyboard::isKeyPressed(Keyboard::Space))
 			camstep[2] += time * CAM_SPEED;
 		if(Keyboard::isKeyPressed(Keyboard::LShift))
 			camstep[2] -= time * CAM_SPEED;
 
-		if(fabs(dirangle[0]) > 0.000001)
+		if(fabs(dirangle[0]) > ALPHA)
 			// dir.y = normalize(dir + Vec3(0.f, 1.f, 0.f) * dirangle[0]),
 			ydir += dirangle[0],
 			ydir = min((float)M_PI/2.f, max(-(float)M_PI/2.f, ydir)),
 			dirchanged = true;
-		if(fabs(dirangle[1]) > 0.000001)
+		if(fabs(dirangle[1]) > ALPHA)
 			dir = normalize(turn(dir, dirangle[1], Plane::xz)),
 			dirchanged = true;
 
-		if(fabs(camstep[0]) > 0.000001)
+		if(fabs(camstep[0]) > ALPHA)
 			cam += dir * camstep[0],
 			camchanged = true;
-		if(fabs(camstep[1]) > 0.000001)
+		if(fabs(camstep[1]) > ALPHA)
 			cam += perp(dir, Plane::xz) * camstep[1],
 			camchanged = true;
-		if(fabs(camstep[2]) > 0.000001)
+		if(fabs(camstep[2]) > ALPHA)
 			cam += Vec3(0.f, 1.f, 0.f) * camstep[2],
 			camchanged = true;
 
@@ -208,16 +217,36 @@ int main( int argc, char *argv[] )
 
 		// set uniform 
 		if(camchanged)
-			shader.setUniform("cam", cam),
 			camchanged = false,
+			shader.setUniform("cam", cam),
 			cout << "cam: " << cam << endl;
 
 		if(dirchanged)
-			dir.y = ydir,
-			shader.setUniform("dir", dir),
-			dirchanged = false,
-			cout << "dir: " << dir << endl,
+		{
+			dirchanged = false;
+			dir.y = ydir;
+
+			// z
+			trm.array[2] = dir.x;
+			trm.array[5] = dir.y;
+			trm.array[8] = dir.z;
+
+			// x
+			cx = - dir.x / dir.z;
+			trm.array[0] = hypot(dir.x, dir.z) / (dir.z - cx*dir.x);
+			trm.array[3] = 0.f;
+			trm.array[6] = trm.array[0] * cx;
+
+			// y
+			trm.array[1] = - (trm.array[3] * trm.array[8] - trm.array[6] * trm.array[3]);
+			trm.array[4] = - (trm.array[6] * trm.array[2] - trm.array[0] * trm.array[8]);
+			trm.array[7] = - (trm.array[0] * trm.array[5] - trm.array[3] * trm.array[2]);
+
+			shader.setUniform("dir", dir);
+			shader.setUniform("trm", trm);
+			cout << "dir: " << dir << endl;
 			dir.y = 0.f;
+		}
 
 
 
